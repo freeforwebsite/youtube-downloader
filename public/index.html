@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YTPipe — Premium YouTube Downloader</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Decorative Background Glows -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="logo-icon">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+        <h1>YTPipe</h1>
+      </div>
+      <p class="tagline">Premium HD YouTube Video & Audio Extractor</p>
+    </header>
+
+    <!-- Main Content Card -->
+    <main class="main-card glass">
+      <!-- Search Form -->
+      <section class="search-section">
+        <form id="search-form" class="search-form">
+          <div class="input-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="input-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
+            <input type="text" id="video-url" placeholder="Paste YouTube link here..." required autocomplete="off">
+          </div>
+          <button type="submit" id="fetch-btn">
+            <span>Extract</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="btn-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            </svg>
+          </button>
+        </form>
+        <div id="error-message" class="error-msg hidden"></div>
+      </section>
+
+      <!-- Skeleton Loader -->
+      <div id="skeleton-loader" class="skeleton-container hidden">
+        <div class="skeleton-header">
+          <div class="skeleton-thumbnail"></div>
+          <div class="skeleton-details">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-author"></div>
+            <div class="skeleton-meta-row">
+              <div class="skeleton-meta-item"></div>
+              <div class="skeleton-meta-item"></div>
+            </div>
+          </div>
+        </div>
+        <div class="skeleton-tabs">
+          <div class="skeleton-tab"></div>
+          <div class="skeleton-tab"></div>
+          <div class="skeleton-tab"></div>
+        </div>
+        <div class="skeleton-list">
+          <div class="skeleton-list-item"></div>
+          <div class="skeleton-list-item"></div>
+          <div class="skeleton-list-item"></div>
+        </div>
+      </div>
+
+      <!-- Preview & Downloader Section -->
+      <section id="preview-section" class="preview-section hidden">
+        <div class="video-info-card">
+          <div class="video-thumbnail-wrapper">
+            <img id="video-thumbnail" src="" alt="Video Thumbnail">
+            <span id="video-duration" class="video-duration">0:00</span>
+          </div>
+          <div class="video-details">
+            <h2 id="video-title">Video Title</h2>
+            <div class="channel-row">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="channel-icon">
+                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+              </svg>
+              <a id="video-author" href="#" target="_blank">Channel Name</a>
+            </div>
+            <div class="meta-row">
+              <span id="video-views" class="meta-item">0 views</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Format Selector Tabs -->
+        <div class="tabs-container">
+          <button class="tab-btn active" data-tab="video-audio">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="tab-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            Video + Audio
+          </button>
+          <button class="tab-btn" data-tab="audio-only">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="tab-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />
+            </svg>
+            Audio Only
+          </button>
+          <button class="tab-btn" data-tab="video-only">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="tab-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72V4.575c0-.621-.504-1.125-1.125-1.125h-9.75c-.621 0-1.125.504-1.125 1.125v14.85c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V10.5Z" />
+            </svg>
+            Video Only
+          </button>
+        </div>
+
+        <!-- Formats List Container -->
+        <div class="formats-list-wrapper">
+          <!-- Video + Audio Tab Content -->
+          <div id="video-audio-tab" class="tab-content active">
+            <div class="table-header">
+              <span>Quality</span>
+              <span>Size</span>
+              <span>Format</span>
+              <span>Action</span>
+            </div>
+            <div id="video-audio-list" class="formats-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Audio Only Tab Content -->
+          <div id="audio-only-tab" class="tab-content">
+            <div class="table-header">
+              <span>Quality / Bitrate</span>
+              <span>Size</span>
+              <span>Format</span>
+              <span>Action</span>
+            </div>
+            <div id="audio-only-list" class="formats-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Video Only Tab Content -->
+          <div id="video-only-tab" class="tab-content">
+            <div class="table-header">
+              <span>Quality / FPS</span>
+              <span>Size</span>
+              <span>Format</span>
+              <span>Action</span>
+            </div>
+            <div id="video-only-list" class="formats-list">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Download Overlay / Modal -->
+    <div id="download-modal" class="modal-overlay hidden">
+      <div class="modal-content glass">
+        <div class="loader-ring">
+          <div class="ring-core"></div>
+        </div>
+        <h3 id="modal-title">Preparing your download...</h3>
+        <p id="modal-desc">Fetching media streams and converting formats.</p>
+        
+        <div class="progress-container">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="progress-info" class="progress-info">
+          Please wait, this might take a moment.
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions / Footer -->
+    <footer class="app-footer">
+      <p>YTPipe supports downloads in full HD, 2K, and 4K resolution using dynamic backend muxing.</p>
+      <div class="footer-note">
+        <span>Runs locally for 100% reliability</span> &bull; <span>Optimized with FFmpeg</span>
+      </div>
+      <p class="copyright">&copy; 2026 YTPipe. Made with ❤️ by Antigravity</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
