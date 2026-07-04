@@ -124,7 +124,7 @@ app.get('/api/info', async (req, res) => {
     child.on('close', (code) => {
       if (code !== 0) {
         console.error('yt-dlp info failed with code:', code, 'stderr:', stderrData);
-        return res.status(400).json({ error: 'Failed to extract video details. Verify the URL is correct.' });
+        return res.status(400).json({ error: `Failed to extract video details: ${stderrData.trim() || 'Process exited with code ' + code}` });
       }
 
       try {
