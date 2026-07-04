@@ -25,7 +25,55 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progress-bar');
   const progressInfo = document.getElementById('progress-info');
 
+  // Bypass Modal Elements
+  const bypassBtn = document.getElementById('bypass-btn');
+  const bypassModal = document.getElementById('bypass-modal');
+  const closeBypassBtn = document.getElementById('close-bypass-btn');
+  const cookiesInput = document.getElementById('cookies-input');
+  const saveCookiesBtn = document.getElementById('save-cookies-btn');
+  const clearCookiesBtn = document.getElementById('clear-cookies-btn');
+
   let currentVideoUrl = '';
+
+  // Load saved cookies and initialize input
+  if (cookiesInput) {
+    cookiesInput.value = localStorage.getItem('yt_cookies') || '';
+  }
+
+  // Bypass Modal Logic
+  if (bypassBtn) {
+    bypassBtn.addEventListener('click', () => {
+      bypassModal.classList.remove('hidden');
+    });
+  }
+
+  if (closeBypassBtn) {
+    closeBypassBtn.addEventListener('click', () => {
+      bypassModal.classList.add('hidden');
+    });
+  }
+
+  if (saveCookiesBtn) {
+    saveCookiesBtn.addEventListener('click', () => {
+      const val = cookiesInput.value.trim();
+      if (val) {
+        localStorage.setItem('yt_cookies', val);
+        alert('Cookies saved successfully!');
+        bypassModal.classList.add('hidden');
+      } else {
+        alert('Please paste some cookie content first.');
+      }
+    });
+  }
+
+  if (clearCookiesBtn) {
+    clearCookiesBtn.addEventListener('click', () => {
+      localStorage.removeItem('yt_cookies');
+      cookiesInput.value = '';
+      alert('Cookies cleared.');
+      bypassModal.classList.add('hidden');
+    });
+  }
 
   // Tab switching logic
   const tabBtns = document.querySelectorAll('.tab-btn');
@@ -77,7 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Dynamically get the current host (works both locally and on Vercel)
       const host = window.location.origin;
-      const response = await fetch(`${host}/api/info?url=${encodeURIComponent(url)}`);
+      const cookies = localStorage.getItem('yt_cookies') || '';
+      const response = await fetch(`${host}/api/info?url=${encodeURIComponent(url)}&cookies=${encodeURIComponent(cookies)}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -241,7 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function triggerDownload(itag, type, merge) {
     const host = window.location.origin;
-    const downloadUrl = `${host}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}`;
+    const cookies = localStorage.getItem('yt_cookies') || '';
+    const downloadUrl = `${host}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}&cookies=${encodeURIComponent(cookies)}`;
 
     showDownloadModal(merge === 'true');
 

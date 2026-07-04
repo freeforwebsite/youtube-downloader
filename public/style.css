@@ -754,3 +754,33 @@ body {
     display: none;
   }
 }
+
+/* Bypass Bot Block Button */
+.bypass-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: var(--transition-smooth);
+}
+
+.bypass-btn:hover {
+  background: rgba(239, 70, 111, 0.15);
+  border-color: rgba(239, 70, 111, 0.3);
+  color: var(--secondary);
+  box-shadow: 0 0 12px rgba(239, 70, 111, 0.2);
+}
+
+.bypass-icon {
+  width: 15px;
+  height: 15px;
+}
