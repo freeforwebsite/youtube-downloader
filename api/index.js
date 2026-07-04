@@ -102,13 +102,18 @@ app.get('/api/info', async (req, res) => {
     const activeYtdlpPath = await ensureYtdlp();
 
     // Run yt-dlp to dump metadata in JSON format
-    const child = cp.spawn(activeYtdlpPath, [
+    const args = [
       '--js-runtimes', 'node',
       '--dump-json',
       '--no-playlist',
-      '--no-warnings',
-      videoUrl
-    ], { windowsHide: true });
+      '--no-warnings'
+    ];
+    if (process.env.PROXY_URL) {
+      args.push('--proxy', process.env.PROXY_URL);
+    }
+    args.push(videoUrl);
+
+    const child = cp.spawn(activeYtdlpPath, args, { windowsHide: true });
 
     let stdoutData = '';
     let stderrData = '';
@@ -308,6 +313,9 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-'
     ];
+    if (process.env.PROXY_URL) {
+      args.push('--proxy', process.env.PROXY_URL);
+    }
 
     if (type === 'audio') {
       args.push('--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0');
