@@ -92,6 +92,7 @@ app.get('/api/info', async (req, res) => {
 
     // Run yt-dlp to dump metadata in JSON format
     const child = cp.spawn(activeYtdlpPath, [
+      '--js-runtimes', 'node',
       '--dump-json',
       '--no-playlist',
       '--no-warnings',
@@ -241,7 +242,7 @@ app.get('/api/info', async (req, res) => {
   }
 });
 
-// API: Download endpoint using yt-dlp and local ffmpeg muxer
+// API: Download endpoint - STREAMS directly to browser (no temp files, instant start!)
 app.get('/api/download', async (req, res) => {
   const { url, itag, type, needsMerging } = req.query;
 
@@ -252,8 +253,14 @@ app.get('/api/download', async (req, res) => {
   try {
     const activeYtdlpPath = await ensureYtdlp();
 
-    // 1. Get safe title for filename
-    const infoChild = cp.spawnSync(activeYtdlpPath, ['--dump-json', '--no-playlist', url], { windowsHide: true });
+    // Fetch video title to name the download file appropriately
+    const infoChild = cp.spawnSync(activeYtdlpPath, [
+      '--js-runtimes', 'node',
+      '--dump-json',
+      '--no-playlist',
+      url
+    ], { windowsHide: true });
+    
     let safeTitle = 'video';
     if (infoChild.status === 0) {
       try {
@@ -276,81 +283,64 @@ app.get('/api/download', async (req, res) => {
     } else if (needsMerging === 'true' || type === 'merged') {
       ext = 'mp4';
       contentType = 'video/mp4';
-      // Format spec: download this video format ID, and merge with best audio
       formatSpec = `${itag}+bestaudio/best`;
     }
 
-    const tempFileName = `ytdl-${Date.now()}-${itag}.${ext}`;
-    const tempFilePath = path.join(os.tmpdir(), tempFileName);
+    // Set streaming headers for inline attachment download
+    res.header('Content-Disposition', `attachment; filename="${encodeURIComponent(safeTitle)}.${ext}"`);
+    res.header('Content-Type', contentType);
 
-    // Prepare yt-dlp arguments
+    // Prepare yt-dlp arguments to stream straight to stdout (-o -)
     const args = [
+      '--js-runtimes', 'node',
       '-f', formatSpec,
       '--ffmpeg-location', ffmpegDir,
-      '-o', tempFilePath
+      '-o', '-'
     ];
 
     if (type === 'audio') {
       args.push('--extract-audio', '--audio-format', 'mp3', '--audio-quality', '0');
-    } else if (needsMerging === 'true') {
-      args.push('--merge-output-format', 'mp4');
+    } else if (needsMerging === 'true' || type === 'merged') {
+      args.push(
+        '--merge-output-format', 'mp4',
+        '--postprocessor-args', 'Merger:-f mp4 -movflags frag_keyframe+empty_moov'
+      );
     }
 
     args.push(url);
 
-    console.log(`Starting download command: yt-dlp ${args.join(' ')}`);
+    console.log(`Starting real-time stream piping: yt-dlp ${args.join(' ')}`);
 
     const downloadProcess = cp.spawn(activeYtdlpPath, args, { windowsHide: true });
 
+    // Pipe the standard output stream of yt-dlp directly into the HTTP response stream!
+    downloadProcess.stdout.pipe(res);
+
+    // Capture error output to help log errors
+    let errorLog = '';
+    downloadProcess.stderr.on('data', (data) => {
+      const errStr = data.toString();
+      if (errStr.toLowerCase().includes('error')) {
+        errorLog += errStr;
+        console.error('yt-dlp stderr error:', errStr);
+      }
+    });
+
     downloadProcess.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`yt-dlp download process exited with code ${code}`);
+      if (code !== 0 && code !== null) {
+        console.error(`yt-dlp stream process exited with code ${code}. Stderr: ${errorLog}`);
         if (!res.headersSent) {
-          res.status(500).send('Failed to process and download video from YouTube');
+          res.status(500).send('Streaming download failed');
         }
-        // Cleanup file if created
-        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
-        return;
       }
-
-      // Check if temp file exists
-      if (!fs.existsSync(tempFilePath)) {
-        console.error('Downloaded file not found at:', tempFilePath);
-        if (!res.headersSent) {
-          res.status(500).send('File processing completed, but output file was not found.');
-        }
-        return;
-      }
-
-      // Send file to browser using native download mechanism
-      res.download(tempFilePath, `${safeTitle}.${ext}`, (err) => {
-        if (err) {
-          console.error('Error sending file to browser:', err);
-        }
-        // Delete temp file from server once download finishes or errors out
-        try {
-          if (fs.existsSync(tempFilePath)) {
-            fs.unlinkSync(tempFilePath);
-            console.log('Cleaned up temp file:', tempFilePath);
-          }
-        } catch (cleanupErr) {
-          console.error('Failed to cleanup temp file:', cleanupErr);
-        }
-      });
+      res.end();
     });
 
     res.on('close', () => {
-      // If client aborts request, terminate yt-dlp download process and delete temp file
+      // If user cancels the download in the browser, terminate the process immediately to release resources
       if (downloadProcess) {
         downloadProcess.kill();
       }
-      setTimeout(() => {
-        try {
-          if (fs.existsSync(tempFilePath)) {
-            fs.unlinkSync(tempFilePath);
-          }
-        } catch (e) {}
-      }, 2000);
     });
 
   } catch (error) {
