@@ -257,18 +257,23 @@ document.addEventListener('DOMContentLoaded', () => {
       modalDesc.textContent = 'Muxing high-quality streams. This might take up to a minute for HD/4K videos. Please wait...';
       progressBar.style.width = '100%';
       progressBar.style.animation = 'pulse 1.5s infinite';
-      progressInfo.textContent = 'Piping media streams through FFmpeg compiler.';
+      progressInfo.innerHTML = 'Download started! You can track the progress in your browser.<br><button id="modal-close-btn" class="download-btn" style="margin: 12px auto 0 auto; padding: 6px 16px;">Close Overlay</button>';
       
-      // Keep modal open longer for merging, and give a Close button or auto-close after 12 seconds
+      // Auto close after 6 seconds
+      const autoCloseTimer = setTimeout(() => {
+        downloadModal.classList.add('hidden');
+      }, 6000);
+
+      // Register close click immediately
       setTimeout(() => {
-        progressInfo.innerHTML = 'Download should begin shortly. If not, try again. <button id="modal-close-btn" class="download-btn" style="margin: 12px auto 0 auto; padding: 4px 10px;">Close Overlay</button>';
         const closeBtn = document.getElementById('modal-close-btn');
         if (closeBtn) {
           closeBtn.addEventListener('click', () => {
+            clearTimeout(autoCloseTimer);
             downloadModal.classList.add('hidden');
           });
         }
-      }, 10000);
+      }, 50);
     } else {
       modalTitle.textContent = 'Starting Download...';
       modalDesc.textContent = 'Fetching media stream and sending to browser.';
