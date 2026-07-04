@@ -122,6 +122,67 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
+/* Engine Badge */
+.engine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-left: 6px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+/* States */
+.engine-badge.checking {
+  color: var(--text-muted);
+}
+.engine-badge.checking .badge-dot {
+  background: #EAB308;
+  animation: pulse-dot 1.2s infinite;
+}
+
+.engine-badge.local {
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.15);
+}
+.engine-badge.local .badge-dot {
+  background: #10B981;
+  box-shadow: 0 0 6px #10B981;
+}
+
+.engine-badge.cloud {
+  color: #F59E0B; /* Orange warning indicator */
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.15);
+  cursor: help;
+}
+.engine-badge.cloud .badge-dot {
+  background: #F59E0B;
+  box-shadow: 0 0 6px #F59E0B;
+  animation: pulse-dot 1.5s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
 .tagline {
   font-size: 1.05rem;
   color: var(--text-muted);
@@ -753,34 +814,4 @@ body {
   .format-ext {
     display: none;
   }
-}
-
-/* Bypass Bot Block Button */
-.bypass-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: var(--transition-smooth);
-}
-
-.bypass-btn:hover {
-  background: rgba(239, 70, 111, 0.15);
-  border-color: rgba(239, 70, 111, 0.3);
-  color: var(--secondary);
-  box-shadow: 0 0 12px rgba(239, 70, 111, 0.2);
-}
-
-.bypass-icon {
-  width: 15px;
-  height: 15px;
 }

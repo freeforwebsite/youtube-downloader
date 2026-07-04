@@ -24,15 +24,15 @@
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
         </svg>
         <h1>YTPipe</h1>
+        <div id="engine-badge" class="engine-badge checking" title="Checking if local server is running on port 3000 to bypass YouTube blocks.">
+          <span class="badge-dot"></span>
+          <span id="badge-text">Checking...</span>
+        </div>
       </div>
       <p class="tagline">Premium HD YouTube Video & Audio Extractor</p>
-      <button id="bypass-btn" class="bypass-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="bypass-icon">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-        </svg>
-        <span>Bypass Bot Block</span>
-      </button>
     </header>
+
+    <!-- Main Content Card -->
     <main class="main-card glass">
       <!-- Search Form -->
       <section class="search-section">
@@ -178,32 +178,6 @@
         <div id="progress-info" class="progress-info">
           Please wait, this might take a moment.
         </div>
-    </div>
-
-    <!-- Bypass Cookies Modal -->
-    <div id="bypass-modal" class="modal-overlay hidden">
-      <div class="modal-content glass" style="max-width: 500px; text-align: left; align-items: stretch;">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px; color: var(--secondary);">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-          </svg>
-          Bypass YouTube Bot Verification
-        </h3>
-        <p style="margin: 0; line-height: 1.4; font-size: 0.9rem;">If you get the <b>"Sign in to confirm you're not a bot"</b> error when downloading online, you can paste your YouTube cookies here to manually authenticate:</p>
-        
-        <ol style="margin: 8px 0; padding-left: 20px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
-          <li>Install the Chrome extension <a href="https://chrome.google.com/webstore/detail/get-cookiestxt-locally/ccoljmdbeoapcmkbneoleoajphjocdmo" target="_blank" style="color: var(--secondary); text-decoration: underline;">Get cookies.txt LOCALLY</a>.</li>
-          <li>Open <a href="https://www.youtube.com" target="_blank" style="color: var(--secondary); text-decoration: underline;">youtube.com</a> (make sure you are signed in).</li>
-          <li>Click the extension icon, copy the exported text, and paste it below.</li>
-        </ol>
-
-        <textarea id="cookies-input" rows="8" placeholder="# Netscape HTTP Cookie File&#10;.youtube.com	TRUE	/	TRUE	..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; resize: vertical; box-sizing: border-box;"></textarea>
-
-        <div style="display: flex; gap: 12px; margin-top: 8px;">
-          <button id="save-cookies-btn" class="download-btn" style="flex: 1; padding: 10px;">Save Cookies</button>
-          <button id="clear-cookies-btn" class="download-btn" style="background: transparent; border: 1px solid rgba(255,255,255,0.15); flex: 1; padding: 10px;">Clear</button>
-        </div>
-        <button id="close-bypass-btn" class="download-btn" style="background: transparent; border: none; padding: 6px; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; align-self: center;">Close</button>
       </div>
     </div>
 

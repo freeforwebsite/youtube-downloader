@@ -57,14 +57,6 @@ function downloadFile(fileUrl, outputPath) {
   });
 }
 
-// Helper: Create a temporary cookies file from Netscape cookie text content
-function createTempCookiesFile(cookiesContent) {
-  if (!cookiesContent || !cookiesContent.trim()) return null;
-  const tempPath = path.join(os.tmpdir(), `cookies-${Date.now()}-${Math.random().toString(36).substring(7)}.txt`);
-  fs.writeFileSync(tempPath, cookiesContent, 'utf8');
-  return tempPath;
-}
-
 // Ensure yt-dlp binary is present
 async function ensureYtdlp() {
   if (fs.existsSync(ytdlpPath)) {
@@ -98,16 +90,19 @@ function formatBytes(bytes) {
   return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
 }
 
+// API: Ping endpoint to check status
+app.get('/api/ping', (req, res) => {
+  res.json({ status: 'ok', platform: process.platform });
+});
+
 // API: Fetch Video Info using yt-dlp
 app.get('/api/info', async (req, res) => {
   const videoUrl = req.query.url;
-  const cookiesContent = req.query.cookies;
 
   if (!videoUrl) {
     return res.status(400).json({ error: 'YouTube URL is required' });
   }
 
-  let tempCookiesPath = null;
   try {
     const activeYtdlpPath = await ensureYtdlp();
 
@@ -118,15 +113,6 @@ app.get('/api/info', async (req, res) => {
       '--no-playlist',
       '--no-warnings'
     ];
-
-    // If client provided bypass cookies, create a temp file for yt-dlp to read
-    if (cookiesContent) {
-      tempCookiesPath = createTempCookiesFile(cookiesContent);
-      if (tempCookiesPath) {
-        args.push('--cookies', tempCookiesPath);
-      }
-    }
-
     if (process.env.PROXY_URL) {
       args.push('--proxy', process.env.PROXY_URL);
     }
@@ -146,11 +132,6 @@ app.get('/api/info', async (req, res) => {
     });
 
     child.on('close', (code) => {
-      // Clean up the temporary cookies file
-      if (tempCookiesPath && fs.existsSync(tempCookiesPath)) {
-        try { fs.unlinkSync(tempCookiesPath); } catch (e) { console.error('Temp cookies cleanup failed:', e); }
-      }
-
       if (code !== 0) {
         console.error('yt-dlp info failed with code:', code, 'stderr:', stderrData);
         return res.status(400).json({ error: `Failed to extract video details: ${stderrData.trim() || 'Process exited with code ' + code}` });
@@ -284,36 +265,22 @@ app.get('/api/info', async (req, res) => {
 
 // API: Download endpoint - STREAMS directly to browser (no temp files, instant start!)
 app.get('/api/download', async (req, res) => {
-  const { url, itag, type, needsMerging, cookies } = req.query;
+  const { url, itag, type, needsMerging } = req.query;
 
   if (!url || !itag) {
     return res.status(400).send('YouTube URL and format itag are required');
   }
 
-  let tempCookiesPath = null;
   try {
     const activeYtdlpPath = await ensureYtdlp();
 
-    // Create temporary cookies file if provided
-    if (cookies) {
-      tempCookiesPath = createTempCookiesFile(cookies);
-    }
-
     // Fetch video title to name the download file appropriately
-    const titleArgs = [
+    const infoChild = cp.spawnSync(activeYtdlpPath, [
       '--js-runtimes', 'node',
       '--dump-json',
-      '--no-playlist'
-    ];
-    if (tempCookiesPath) {
-      titleArgs.push('--cookies', tempCookiesPath);
-    }
-    if (process.env.PROXY_URL) {
-      titleArgs.push('--proxy', process.env.PROXY_URL);
-    }
-    titleArgs.push(url);
-
-    const infoChild = cp.spawnSync(activeYtdlpPath, titleArgs, { windowsHide: true });
+      '--no-playlist',
+      url
+    ], { windowsHide: true });
     
     let safeTitle = 'video';
     if (infoChild.status === 0) {
@@ -351,10 +318,6 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-'
     ];
-    
-    if (tempCookiesPath) {
-      args.push('--cookies', tempCookiesPath);
-    }
     if (process.env.PROXY_URL) {
       args.push('--proxy', process.env.PROXY_URL);
     }
@@ -387,14 +350,7 @@ app.get('/api/download', async (req, res) => {
       }
     });
 
-    const cleanupTempCookies = () => {
-      if (tempCookiesPath && fs.existsSync(tempCookiesPath)) {
-        try { fs.unlinkSync(tempCookiesPath); } catch (e) { console.error('Temp cookies cleanup failed:', e); }
-      }
-    };
-
     downloadProcess.on('close', (code) => {
-      cleanupTempCookies();
       if (code !== 0 && code !== null) {
         console.error(`yt-dlp stream process exited with code ${code}. Stderr: ${errorLog}`);
         if (!res.headersSent) {
@@ -405,7 +361,6 @@ app.get('/api/download', async (req, res) => {
     });
 
     res.on('close', () => {
-      cleanupTempCookies();
       // If user cancels the download in the browser, terminate the process immediately to release resources
       if (downloadProcess) {
         downloadProcess.kill();

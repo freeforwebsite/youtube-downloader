@@ -5,6 +5,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const skeletonLoader = document.getElementById('skeleton-loader');
   const previewSection = document.getElementById('preview-section');
   const fetchBtn = document.getElementById('fetch-btn');
+  const engineBadge = document.getElementById('engine-badge');
+  const badgeText = document.getElementById('badge-text');
+
+  let apiBase = window.location.origin;
+
+  // Check if local server is running to use as engine
+  async function checkConnection() {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      apiBase = window.location.origin;
+      updateEngineBadge('local', 'Local Engine');
+      return;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+      const res = await fetch('http://localhost:3000/api/ping', {
+        method: 'GET',
+        mode: 'cors',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'ok') {
+          apiBase = 'http://localhost:3000';
+          updateEngineBadge('local', 'Local Engine');
+          console.log('Local server detected! Routing queries to http://localhost:3000');
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('Local server is offline or unreachable from this context.');
+    }
+
+    apiBase = window.location.origin;
+    updateEngineBadge('cloud', 'Cloud Engine');
+  }
+
+  function updateEngineBadge(status, text) {
+    if (!engineBadge) return;
+    engineBadge.className = `engine-badge ${status}`;
+    badgeText.textContent = text;
+    
+    if (status === 'cloud') {
+      engineBadge.title = "Local server is offline. Run 'npm start' on your computer to use the Local Engine (recommended to bypass bot checks).";
+    } else {
+      engineBadge.title = "Connected to local server. Downloads will run on your local network (fast, unblocked, no timeouts!).";
+    }
+  }
+
+  // Run connection check immediately
+  checkConnection();
 
   // Video Info Elements
   const videoThumbnail = document.getElementById('video-thumbnail');
@@ -25,55 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressBar = document.getElementById('progress-bar');
   const progressInfo = document.getElementById('progress-info');
 
-  // Bypass Modal Elements
-  const bypassBtn = document.getElementById('bypass-btn');
-  const bypassModal = document.getElementById('bypass-modal');
-  const closeBypassBtn = document.getElementById('close-bypass-btn');
-  const cookiesInput = document.getElementById('cookies-input');
-  const saveCookiesBtn = document.getElementById('save-cookies-btn');
-  const clearCookiesBtn = document.getElementById('clear-cookies-btn');
-
   let currentVideoUrl = '';
-
-  // Load saved cookies and initialize input
-  if (cookiesInput) {
-    cookiesInput.value = localStorage.getItem('yt_cookies') || '';
-  }
-
-  // Bypass Modal Logic
-  if (bypassBtn) {
-    bypassBtn.addEventListener('click', () => {
-      bypassModal.classList.remove('hidden');
-    });
-  }
-
-  if (closeBypassBtn) {
-    closeBypassBtn.addEventListener('click', () => {
-      bypassModal.classList.add('hidden');
-    });
-  }
-
-  if (saveCookiesBtn) {
-    saveCookiesBtn.addEventListener('click', () => {
-      const val = cookiesInput.value.trim();
-      if (val) {
-        localStorage.setItem('yt_cookies', val);
-        alert('Cookies saved successfully!');
-        bypassModal.classList.add('hidden');
-      } else {
-        alert('Please paste some cookie content first.');
-      }
-    });
-  }
-
-  if (clearCookiesBtn) {
-    clearCookiesBtn.addEventListener('click', () => {
-      localStorage.removeItem('yt_cookies');
-      cookiesInput.value = '';
-      alert('Cookies cleared.');
-      bypassModal.classList.add('hidden');
-    });
-  }
 
   // Tab switching logic
   const tabBtns = document.querySelectorAll('.tab-btn');
@@ -123,10 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showError('');
 
     try {
-      // Dynamically get the current host (works both locally and on Vercel)
-      const host = window.location.origin;
-      const cookies = localStorage.getItem('yt_cookies') || '';
-      const response = await fetch(`${host}/api/info?url=${encodeURIComponent(url)}&cookies=${encodeURIComponent(cookies)}`);
+      const response = await fetch(`${apiBase}/api/info?url=${encodeURIComponent(url)}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -287,11 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     previewSection.classList.remove('hidden');
   }
-
   function triggerDownload(itag, type, merge) {
-    const host = window.location.origin;
-    const cookies = localStorage.getItem('yt_cookies') || '';
-    const downloadUrl = `${host}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}&cookies=${encodeURIComponent(cookies)}`;
+    const downloadUrl = `${apiBase}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}`;
 
     showDownloadModal(merge === 'true');
 
