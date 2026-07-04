@@ -20,8 +20,10 @@ app.use(express.json());
 // Serve static files from public directory if we're running locally
 app.use(express.static(path.join(__dirname, '../public')));
 
-const binDir = path.join(__dirname, '../bin');
-const ytdlpPath = path.join(binDir, 'yt-dlp.exe');
+const isWindows = process.platform === 'win32';
+// Vercel filesystem is read-only except for os.tmpdir()
+const binDir = process.env.VERCEL ? os.tmpdir() : path.join(__dirname, '../bin');
+const ytdlpPath = path.join(binDir, isWindows ? 'yt-dlp.exe' : 'yt-dlp');
 const ffmpegExePath = require('ffmpeg-static');
 const ffmpegDir = path.dirname(ffmpegExePath);
 
@@ -63,10 +65,19 @@ async function ensureYtdlp() {
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });
   }
-  console.log('yt-dlp.exe not found. Downloading latest build from GitHub...');
-  const url = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
+  console.log(`yt-dlp not found. Downloading latest build from GitHub for ${process.platform}...`);
+  const url = isWindows
+    ? 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
+    : 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp';
+  
   await downloadFile(url, ytdlpPath);
-  console.log('yt-dlp.exe downloaded successfully.');
+  
+  // Grant execute permissions on Unix-like environments (e.g. Vercel Linux)
+  if (!isWindows) {
+    fs.chmodSync(ytdlpPath, 0o755);
+  }
+  
+  console.log('yt-dlp downloaded successfully.');
   return ytdlpPath;
 }
 
