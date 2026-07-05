@@ -292,7 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
     previewSection.classList.remove('hidden');
   }
   function triggerDownload(itag, type, merge) {
-    const downloadUrl = `${apiBase}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}`;
+    const titleVal = videoTitle.textContent || 'video';
+    const downloadUrl = `${apiBase}/api/download?url=${encodeURIComponent(currentVideoUrl)}&itag=${itag}&type=${type}&needsMerging=${merge}&title=${encodeURIComponent(titleVal)}`;
 
     showDownloadModal(merge === 'true');
 

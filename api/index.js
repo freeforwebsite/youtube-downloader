@@ -276,7 +276,7 @@ app.get('/api/info', async (req, res) => {
 
 // API: Download endpoint - STREAMS directly to browser (no temp files, instant start!)
 app.get('/api/download', async (req, res) => {
-  const { url, itag, type, needsMerging } = req.query;
+  const { url, itag, type, needsMerging, title } = req.query;
 
   if (!url || !itag) {
     return res.status(400).send('YouTube URL and format itag are required');
@@ -285,35 +285,9 @@ app.get('/api/download', async (req, res) => {
   try {
     const activeYtdlpPath = await ensureYtdlp();
 
-    // Fetch video title to name the download file appropriately
-    const infoArgs = [
-      '--js-runtimes', 'node',
-      '--dump-json',
-      '--no-playlist',
-      '--no-check-certificate',
-      '--extractor-args', 'youtube:player_client=ios,web'
-    ];
-    const cookiesPath = path.join(__dirname, '../cookies.txt');
-    console.log('Download Title: Cookies file found:', fs.existsSync(cookiesPath));
-    if (fs.existsSync(cookiesPath)) {
-      infoArgs.push('--cookies', cookiesPath);
-    }
-    if (process.env.PROXY_URL) {
-      infoArgs.push('--proxy', process.env.PROXY_URL);
-    }
-    infoArgs.push(url);
-
-    const infoChild = cp.spawnSync(activeYtdlpPath, infoArgs, { windowsHide: true });
-    
-    let safeTitle = 'video';
-    if (infoChild.status === 0) {
-      try {
-        const info = JSON.parse(infoChild.stdout.toString());
-        safeTitle = (info.title || 'video').replace(/[^\w\s-]/gi, '').trim();
-      } catch (e) {
-        console.error('Failed to parse title for download:', e);
-      }
-    }
+    // Use client-provided title or fallback to avoid a slow blocking yt-dlp execution
+    const rawTitle = title || 'video';
+    const safeTitle = rawTitle.replace(/[^\w\s-]/gi, '').trim() || 'video';
 
     // Determine output file container/name
     let ext = 'mp4';
