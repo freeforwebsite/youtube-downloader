@@ -331,7 +331,6 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-'
     ];
-    const cookiesPath = path.join(__dirname, '../cookies.txt');
     if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
     }
