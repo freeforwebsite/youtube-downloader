@@ -112,7 +112,8 @@ app.get('/api/info', async (req, res) => {
       '--dump-json',
       '--no-playlist',
       '--no-warnings',
-      '--no-check-certificate'
+      '--no-check-certificate',
+      '--extractor-args', 'youtube:player-client=ios'
     ];
     const cookiesPath = path.join(__dirname, '../cookies.txt');
     console.log('API Info: Cookies file found:', fs.existsSync(cookiesPath));
@@ -289,7 +290,8 @@ app.get('/api/download', async (req, res) => {
       '--js-runtimes', 'node',
       '--dump-json',
       '--no-playlist',
-      '--no-check-certificate'
+      '--no-check-certificate',
+      '--extractor-args', 'youtube:player-client=ios'
     ];
     const cookiesPath = path.join(__dirname, '../cookies.txt');
     console.log('Download Title: Cookies file found:', fs.existsSync(cookiesPath));
@@ -339,7 +341,8 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-',
       '-N', '8',
-      '--no-check-certificate'
+      '--no-check-certificate',
+      '--extractor-args', 'youtube:player-client=ios'
     ];
     if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
