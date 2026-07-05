@@ -113,6 +113,10 @@ app.get('/api/info', async (req, res) => {
       '--no-playlist',
       '--no-warnings'
     ];
+    const cookiesPath = path.join(__dirname, '../cookies.txt');
+    if (fs.existsSync(cookiesPath)) {
+      args.push('--cookies', cookiesPath);
+    }
     if (process.env.PROXY_URL) {
       args.push('--proxy', process.env.PROXY_URL);
     }
@@ -275,12 +279,21 @@ app.get('/api/download', async (req, res) => {
     const activeYtdlpPath = await ensureYtdlp();
 
     // Fetch video title to name the download file appropriately
-    const infoChild = cp.spawnSync(activeYtdlpPath, [
+    const infoArgs = [
       '--js-runtimes', 'node',
       '--dump-json',
-      '--no-playlist',
-      url
-    ], { windowsHide: true });
+      '--no-playlist'
+    ];
+    const cookiesPath = path.join(__dirname, '../cookies.txt');
+    if (fs.existsSync(cookiesPath)) {
+      infoArgs.push('--cookies', cookiesPath);
+    }
+    if (process.env.PROXY_URL) {
+      infoArgs.push('--proxy', process.env.PROXY_URL);
+    }
+    infoArgs.push(url);
+
+    const infoChild = cp.spawnSync(activeYtdlpPath, infoArgs, { windowsHide: true });
     
     let safeTitle = 'video';
     if (infoChild.status === 0) {
@@ -318,6 +331,10 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-'
     ];
+    const cookiesPath = path.join(__dirname, '../cookies.txt');
+    if (fs.existsSync(cookiesPath)) {
+      args.push('--cookies', cookiesPath);
+    }
     if (process.env.PROXY_URL) {
       args.push('--proxy', process.env.PROXY_URL);
     }
