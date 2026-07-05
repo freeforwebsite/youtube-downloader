@@ -308,6 +308,7 @@ app.get('/api/info', async (req, res) => {
 // API: Download endpoint - STREAMS directly to browser (no temp files, instant start!)
 app.get('/api/download', async (req, res) => {
   const { url, itag, type, needsMerging, title } = req.query;
+  const cookiesPath = path.join(__dirname, '../cookies.txt');
 
   if (!url || !itag) {
     return res.status(400).send('YouTube URL and format itag are required');
