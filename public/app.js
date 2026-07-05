@@ -173,16 +173,63 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderVideoInfo(data) {
     // Basic Details
     videoThumbnail.src = data.thumbnail;
-    videoDuration.textContent = data.durationLabel;
+    videoDuration.textContent = data.durationLabel || 'Online';
     videoTitle.textContent = data.title;
     videoAuthor.textContent = data.author;
-    videoAuthor.href = data.authorUrl;
-    videoViews.textContent = `${data.views} views`;
+    videoAuthor.href = data.authorUrl || '#';
+    videoViews.textContent = data.views ? `${data.views} views` : 'Cloud Engine';
 
     // Reset list contents
     videoAudioList.innerHTML = '';
     audioOnlyList.innerHTML = '';
     videoOnlyList.innerHTML = '';
+
+    if (data.isFallback) {
+      // 1. Render Video Button
+      const videoItem = document.createElement('div');
+      videoItem.className = 'format-item';
+      videoItem.innerHTML = `
+        <div class="format-quality">
+          <span>Best Video (1080p)</span>
+          <span class="badge badge-hd">Cloud Fallback</span>
+        </div>
+        <div class="format-size">Fast Download</div>
+        <div class="format-ext">mp4</div>
+        <div>
+          <button class="download-btn" data-itag="best" data-type="video" data-merge="cobalt">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="download-btn-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <span>Get</span>
+          </button>
+        </div>
+      `;
+      videoAudioList.appendChild(videoItem);
+
+      // 2. Render Audio Button
+      const audioItem = document.createElement('div');
+      audioItem.className = 'format-item';
+      audioItem.innerHTML = `
+        <div class="format-quality">
+          <span>High Quality Audio</span>
+          <span class="badge badge-audio">MP3</span>
+        </div>
+        <div class="format-size">Fast Download</div>
+        <div class="format-ext">mp3</div>
+        <div>
+          <button class="download-btn" data-itag="bestaudio" data-type="audio" data-merge="cobalt">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="download-btn-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <span>Get</span>
+          </button>
+        </div>
+      `;
+      audioOnlyList.appendChild(audioItem);
+
+      videoOnlyList.innerHTML = '<div class="no-formats">Not available in Cloud Fallback mode. Please run the local engine.</div>';
+      return;
+    }
 
     const formats = data.formats;
 

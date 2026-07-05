@@ -112,8 +112,7 @@ app.get('/api/info', async (req, res) => {
       '--dump-json',
       '--no-playlist',
       '--no-warnings',
-      '--no-check-certificate',
-      '--extractor-args', 'youtube:player_client=ios,web'
+      '--no-check-certificate'
     ];
     const cookiesPath = path.join(__dirname, '../cookies.txt');
     console.log('API Info: Cookies file found:', fs.existsSync(cookiesPath));
@@ -138,9 +137,41 @@ app.get('/api/info', async (req, res) => {
       stderrData += data.toString();
     });
 
-    child.on('close', (code) => {
+    child.on('close', async (code) => {
       if (code !== 0) {
         console.error('yt-dlp info failed with code:', code, 'stderr:', stderrData);
+        
+        // Cloud Fallback: Try YouTube OEmbed to get basic metadata if yt-dlp is blocked
+        try {
+          const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
+          const oembedRes = await new Promise((resolve, reject) => {
+            https.get(oembedUrl, (response) => {
+              let body = '';
+              response.on('data', chunk => body += chunk);
+              response.on('end', () => {
+                try {
+                  resolve(JSON.parse(body));
+                } catch (e) {
+                  reject(e);
+                }
+              });
+            }).on('error', reject);
+          });
+
+          const match = videoUrl.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+          const videoId = match ? match[1] : '';
+
+          return res.json({
+            isFallback: true,
+            title: oembedRes.title || 'YouTube Video',
+            author: oembedRes.author_name || 'Unknown Channel',
+            thumbnail: oembedRes.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : ''),
+            formats: []
+          });
+        } catch (oembedError) {
+          console.error('OEmbed fallback failed:', oembedError.message);
+        }
+
         const cookiesExist = fs.existsSync(path.join(__dirname, '../cookies.txt'));
         return res.status(400).json({ 
           error: `Failed to extract video details: ${stderrData.trim() || 'Process exited with code ' + code}`,
@@ -282,6 +313,24 @@ app.get('/api/download', async (req, res) => {
     return res.status(400).send('YouTube URL and format itag are required');
   }
 
+  // Cloud/Fallback mode: route through public Cobalt API instances
+  if (needsMerging === 'cobalt') {
+    try {
+      const isAudioOnly = (type === 'audio');
+      console.log(`Cloud Fallback requested. Querying Cobalt API for url: ${url}, audio: ${isAudioOnly}`);
+      const cobaltUrl = await getCobaltDownloadUrl(url, isAudioOnly);
+      if (cobaltUrl) {
+        console.log(`Cloud Fallback Success! Redirecting to: ${cobaltUrl}`);
+        return res.redirect(cobaltUrl);
+      } else {
+        return res.status(500).send('Failed to generate download link via cloud fallback. Please run the local engine.');
+      }
+    } catch (err) {
+      console.error('Cobalt fallback error:', err);
+      return res.status(500).send('Internal Server Error during cloud fallback');
+    }
+  }
+
   try {
     const activeYtdlpPath = await ensureYtdlp();
 
@@ -315,8 +364,7 @@ app.get('/api/download', async (req, res) => {
       '--ffmpeg-location', ffmpegDir,
       '-o', '-',
       '-N', '8',
-      '--no-check-certificate',
-      '--extractor-args', 'youtube:player_client=ios,web'
+      '--no-check-certificate'
     ];
     if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
@@ -377,6 +425,58 @@ app.get('/api/download', async (req, res) => {
     }
   }
 });
+
+// Helper to retrieve download URL from public Cobalt instances
+async function getCobaltDownloadUrl(videoUrl, isAudioOnly) {
+  const instances = [
+    'https://api.cobalt.liubquanti.click/',
+    'https://cobalt.k6.cz/',
+    'https://api.cobalt.tools/'
+  ];
+
+  for (const instance of instances) {
+    try {
+      const parsed = new URL(instance);
+      const payload = JSON.stringify({
+        url: videoUrl,
+        downloadMode: isAudioOnly ? 'audio' : 'auto',
+        videoQuality: '1080',
+        audioFormat: 'mp3',
+        audioBitrate: '128'
+      });
+
+      const response = await new Promise((resolve, reject) => {
+        const req = https.request({
+          hostname: parsed.hostname,
+          port: 443,
+          path: parsed.pathname || '/',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Content-Length': Buffer.byteLength(payload)
+          }
+        }, (res) => {
+          let body = '';
+          res.on('data', chunk => body += chunk);
+          res.on('end', () => resolve({ statusCode: res.statusCode, body }));
+        });
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+      });
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        const data = JSON.parse(response.body);
+        if (data.url) return data.url;
+      }
+    } catch (e) {
+      console.error(`Cobalt instance ${instance} failed:`, e.message);
+    }
+  }
+  return null;
+}
 
 // For local running
 if (require.main === module) {
