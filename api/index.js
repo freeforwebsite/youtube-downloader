@@ -111,7 +111,10 @@ app.get('/api/info', async (req, res) => {
       '--js-runtimes', 'node',
       '--dump-json',
       '--no-playlist',
-      '--no-warnings'
+      '--no-warnings',
+      '--no-call-home',
+      '--no-check-certificate',
+      '--youtube-skip-dash-manifest'
     ];
     const cookiesPath = path.join(__dirname, '../cookies.txt');
     if (fs.existsSync(cookiesPath)) {
@@ -282,7 +285,10 @@ app.get('/api/download', async (req, res) => {
     const infoArgs = [
       '--js-runtimes', 'node',
       '--dump-json',
-      '--no-playlist'
+      '--no-playlist',
+      '--no-call-home',
+      '--no-check-certificate',
+      '--youtube-skip-dash-manifest'
     ];
     const cookiesPath = path.join(__dirname, '../cookies.txt');
     if (fs.existsSync(cookiesPath)) {
@@ -329,7 +335,10 @@ app.get('/api/download', async (req, res) => {
       '--js-runtimes', 'node',
       '-f', formatSpec,
       '--ffmpeg-location', ffmpegDir,
-      '-o', '-'
+      '-o', '-',
+      '-N', '8',
+      '--no-check-certificate',
+      '--youtube-skip-dash-manifest'
     ];
     if (fs.existsSync(cookiesPath)) {
       args.push('--cookies', cookiesPath);
