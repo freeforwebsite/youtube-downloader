@@ -140,7 +140,11 @@ app.get('/api/info', async (req, res) => {
     child.on('close', (code) => {
       if (code !== 0) {
         console.error('yt-dlp info failed with code:', code, 'stderr:', stderrData);
-        return res.status(400).json({ error: `Failed to extract video details: ${stderrData.trim() || 'Process exited with code ' + code}` });
+        const cookiesExist = fs.existsSync(path.join(__dirname, '../cookies.txt'));
+        return res.status(400).json({ 
+          error: `Failed to extract video details: ${stderrData.trim() || 'Process exited with code ' + code}`,
+          cookiesExist: cookiesExist 
+        });
       }
 
       try {
